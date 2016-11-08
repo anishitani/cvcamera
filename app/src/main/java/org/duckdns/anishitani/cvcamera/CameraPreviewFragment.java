@@ -26,6 +26,8 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
 import android.graphics.ImageFormat;
 import android.graphics.Matrix;
 import android.graphics.Point;
@@ -58,6 +60,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -234,7 +237,26 @@ public class CameraPreviewFragment extends Fragment
         @Override
         public void onImageAvailable(ImageReader reader) {
             Image image = reader.acquireLatestImage();
-            Log.i(TAG,"Image planes: " + image.getPlanes().length);
+            Log.i(TAG,"Image: " + image.getWidth() + "x" + image.getHeight());
+            Log.i(TAG,"Plane: " + image.getPlanes().length);
+            for(int i = 0 ; i<image.getPlanes().length ; i++){
+                Image.Plane p = image.getPlanes()[i];
+                Log.i(TAG,"Plane[" + i + "]: " + p.getPixelStride() + "x" + p.getRowStride());
+            }
+
+            if(image.getFormat() == ImageFormat.RAW_SENSOR){
+                Surface surface = new Surface(mTextureView.getSurfaceTexture());
+                Bitmap bitmap = Bitmap.createBitmap(image.getWidth(), image.getHeight(), Bitmap.Config.RGB_565);
+                ByteBuffer buffer = image.getPlanes()[0].getBuffer();
+                buffer.rewind();
+                bitmap.copyPixelsFromBuffer(buffer);
+                Canvas c = surface.lockCanvas(null);
+                c.drawBitmap(bitmap, 0, 0, null);
+                surface.unlockCanvasAndPost(c);
+                bitmap.recycle();
+                surface.release();
+            }
+
             image.close();
         }
 
@@ -626,7 +648,6 @@ public class CameraPreviewFragment extends Fragment
             // We set up a CaptureRequest.Builder with the output Surface.
             mPreviewRequestBuilder
                     = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
-            mPreviewRequestBuilder.addTarget(surface);
             mPreviewRequestBuilder.addTarget(mImageReader.getSurface());
 
             // Here, we create a CameraCaptureSession for camera preview.
