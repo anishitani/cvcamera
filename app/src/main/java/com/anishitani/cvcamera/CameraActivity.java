@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.duckdns.anishitani.cvcamera;
+package com.anishitani.cvcamera;
 
 import android.app.Activity;
 import android.os.Bundle;

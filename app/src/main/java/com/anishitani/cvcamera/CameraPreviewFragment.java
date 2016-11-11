@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.duckdns.anishitani.cvcamera;
+package com.anishitani.cvcamera;
 
 import android.Manifest;
 import android.app.Activity;
@@ -26,8 +26,6 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
-import android.graphics.Bitmap;
-import android.graphics.Canvas;
 import android.graphics.ImageFormat;
 import android.graphics.Matrix;
 import android.graphics.Point;
@@ -237,24 +235,20 @@ public class CameraPreviewFragment extends Fragment
         @Override
         public void onImageAvailable(ImageReader reader) {
             Image image = reader.acquireLatestImage();
-            Log.i(TAG,"Image: " + image.getWidth() + "x" + image.getHeight());
-            Log.i(TAG,"Plane: " + image.getPlanes().length);
-            for(int i = 0 ; i<image.getPlanes().length ; i++){
+            Log.i(TAG, "Image: " + image.getWidth() + "x" + image.getHeight());
+            Log.i(TAG, "Plane: " + image.getPlanes().length);
+            for (int i = 0; i < image.getPlanes().length; i++) {
                 Image.Plane p = image.getPlanes()[i];
-                Log.i(TAG,"Plane[" + i + "]: " + p.getPixelStride() + "x" + p.getRowStride());
+                Log.i(TAG, "Plane[" + i + "]: " + p.getPixelStride() + "x" + p.getRowStride());
             }
 
-            if(image.getFormat() == ImageFormat.RAW_SENSOR){
-                Surface surface = new Surface(mTextureView.getSurfaceTexture());
-                Bitmap bitmap = Bitmap.createBitmap(image.getWidth(), image.getHeight(), Bitmap.Config.RGB_565);
+            if (image.getFormat() == ImageFormat.RAW_SENSOR) {
                 ByteBuffer buffer = image.getPlanes()[0].getBuffer();
-                buffer.rewind();
-                bitmap.copyPixelsFromBuffer(buffer);
-                Canvas c = surface.lockCanvas(null);
-                c.drawBitmap(bitmap, 0, 0, null);
-                surface.unlockCanvasAndPost(c);
-                bitmap.recycle();
-                surface.release();
+                final byte[] data = new byte[buffer.capacity()];
+                buffer.get(data);
+
+                JNIInterface iface = new JNIInterface();
+                iface.processImage(image.getWidth(), image.getHeight(),data);
             }
 
             image.close();
@@ -649,6 +643,7 @@ public class CameraPreviewFragment extends Fragment
             mPreviewRequestBuilder
                     = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
             mPreviewRequestBuilder.addTarget(mImageReader.getSurface());
+//            mPreviewRequestBuilder.addTarget(surface);
 
             // Here, we create a CameraCaptureSession for camera preview.
             mCameraDevice.createCaptureSession(
