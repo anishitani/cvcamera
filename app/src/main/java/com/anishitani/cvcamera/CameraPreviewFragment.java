@@ -247,8 +247,10 @@ public class CameraPreviewFragment extends Fragment
                 final byte[] data = new byte[buffer.capacity()];
                 buffer.get(data);
 
+                Surface surface = new Surface(mTextureView.getSurfaceTexture());
+
                 JNIInterface iface = new JNIInterface();
-                iface.processImage(image.getWidth(), image.getHeight(),data);
+                iface.processImage(image.getWidth(), image.getHeight(),data, surface);
             }
 
             image.close();
